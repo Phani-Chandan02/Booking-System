@@ -169,10 +169,14 @@ function selectService(serviceId) {
   loadSlots(serviceId);
 }
 
+let currentLoadedSlots = [];
+let selectedSlotDetails = null;
+
 async function loadSlots(serviceId) {
   try {
     const res = await fetch(`/api/slots?service_id=${serviceId}`);
     const slots = await res.json();
+    currentLoadedSlots = slots;
     const container = document.getElementById("slots-container");
     container.innerHTML = "";
 
@@ -209,6 +213,7 @@ async function loadSlots(serviceId) {
 
 function selectSlot(slotId, el) {
   selectedSlotId = slotId;
+  selectedSlotDetails = currentLoadedSlots.find(s => s.id === slotId) || null;
   document.querySelectorAll(".slot-item").forEach(i => i.classList.remove("selected"));
   el.classList.add("selected");
   document.getElementById("btn-book-slot").disabled = false;
@@ -216,6 +221,7 @@ function selectSlot(slotId, el) {
 
 async function bookSelectedSlot() {
   if (!selectedSlotId) return;
+  const bookedSlotDetails = selectedSlotDetails;
   try {
     const res = await fetch("/api/appointments/book", {
       method: "POST",
@@ -228,10 +234,11 @@ async function bookSelectedSlot() {
 
     const data = await res.json();
     if (res.status === 201) {
-      showBookingSuccessModal(data.appointment_id);
+      showBookingSuccessModal(data.appointment_id, bookedSlotDetails);
       loadSlots(selectedServiceId);
       document.getElementById("btn-book-slot").disabled = true;
       selectedSlotId = null;
+      selectedSlotDetails = null;
     } else {
       showAlert(data.detail || "Booking failed", "error");
     }
@@ -240,9 +247,24 @@ async function bookSelectedSlot() {
   }
 }
 
-function showBookingSuccessModal(appointmentId) {
+function showBookingSuccessModal(appointmentId, slotDetails) {
   const idEl = document.getElementById("modal-booking-id");
-  if (idEl) idEl.textContent = `#${appointmentId}`;
+  if (idEl) idEl.textContent = `#BOOK-2026-00${appointmentId}`;
+
+  if (slotDetails) {
+    const svcEl = document.getElementById("modal-service-name");
+    if (svcEl && slotDetails.service_name) svcEl.textContent = slotDetails.service_name;
+
+    const provEl = document.getElementById("modal-provider-name");
+    if (provEl && slotDetails.provider_name) provEl.textContent = slotDetails.provider_name;
+
+    const dtEl = document.getElementById("modal-date-time");
+    if (dtEl && slotDetails.slot_date) dtEl.textContent = `${slotDetails.slot_date} | ${slotDetails.start_time} - ${slotDetails.end_time}`;
+
+    const durEl = document.getElementById("modal-duration");
+    if (durEl && slotDetails.duration_minutes) durEl.textContent = `${slotDetails.duration_minutes} Minutes`;
+  }
+
   const modalEl = document.getElementById("booking-success-modal");
   if (modalEl) modalEl.classList.add("active");
 }
