@@ -1,16 +1,50 @@
+# Byte-compiled / optimized files
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-env/
+*.py[cod]
+*$py.class
+
+# Virtual environments
 venv/
+env/
 .venv/
+env.bak/
+venv.bak/
+
+# Environment variables & local secrets (CRITICAL SECURITY CONTROL)
+.env
+.env.local
+.env.*.local
+*.secret
+*.pem
+*.key
+
+# Database and runtime state
 *.db
+*.sqlite
 *.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Logs and debug output
 *.log
+security_audit.log
+backend/security_audit.log
+
+# Test & coverage caches
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Operating system files
 .DS_Store
 Thumbs.db
-.env
+desktop.ini
+
+# Large uncompressed bitmap captures (PNG architecture/diagrams are tracked)
+images/*.bmp
+
+# Temporary files & examination question paper
 instructions_extracted.txt
 sec10.txt
+*General_Instructions.docx
