@@ -228,7 +228,7 @@ async function bookSelectedSlot() {
 
     const data = await res.json();
     if (res.status === 201) {
-      showAlert(`Appointment Confirmed! (ID: ${data.appointment_id})`, "success");
+      showBookingSuccessModal(data.appointment_id);
       loadSlots(selectedServiceId);
       document.getElementById("btn-book-slot").disabled = true;
       selectedSlotId = null;
@@ -238,6 +238,23 @@ async function bookSelectedSlot() {
   } catch (err) {
     showAlert("Booking request error: " + err.message, "error");
   }
+}
+
+function showBookingSuccessModal(appointmentId) {
+  const idEl = document.getElementById("modal-booking-id");
+  if (idEl) idEl.textContent = `#${appointmentId}`;
+  const modalEl = document.getElementById("booking-success-modal");
+  if (modalEl) modalEl.classList.add("active");
+}
+
+function closeBookingModal() {
+  const modalEl = document.getElementById("booking-success-modal");
+  if (modalEl) modalEl.classList.remove("active");
+}
+
+function closeBookingModalAndGoToBookings() {
+  closeBookingModal();
+  showScreen("screen-history");
 }
 
 // Concurrency Race-Condition Demonstration
