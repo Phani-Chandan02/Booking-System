@@ -1,0 +1,14 @@
+.git/
+.gitignore
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.log
+.env
+tests/
+.github/
+instructions_extracted.txt
+sec10.txt

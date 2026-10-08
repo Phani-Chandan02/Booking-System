@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: booking-app-deployment
+  namespace: secure-booking
+  labels:
+    app: booking-system
+    tier: api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: booking-system
+  template:
+    metadata:
+      labels:
+        app: booking-system
+    spec:
+      # Kubernetes Security Control 1: Pod Security Context (Non-Root)
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+      - name: booking-container
+        image: phanichandan02/booking-system:v1.0.0
+        imagePullPolicy: IfNotPresent
+        # Kubernetes Security Control 2: Disallow Privilege Escalation & Capabilities
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
+        ports:
+        - containerPort: 8000
+          name: http-port
+        # Kubernetes Security Control 3: Strict Compute Resource Limits
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "256Mi"
+        # Environment Secrets Injected from Kubernetes Secret
+        env:
+        - name: APP_ENV
+          value: "production"
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: booking-api-secrets
+              key: SECRET_KEY
+        livenessProbe:
+          httpGet:
+            path: /api/metrics
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /api/services
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10

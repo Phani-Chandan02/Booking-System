@@ -1,0 +1,221 @@
+{
+  "project_key": "BOOK",
+  "project_name": "Secure Appointment Booking System",
+  "epics": [
+    {
+      "id": "EP-01",
+      "name": "Identity & Access Governance",
+      "summary": "Authentication, Role-Based Access Control, and credential protection"
+    },
+    {
+      "id": "EP-02",
+      "name": "Service & Catalog Management",
+      "summary": "Service definition, duration management, and provider offerings"
+    },
+    {
+      "id": "EP-03",
+      "name": "Slot Scheduling & Concurrency Engine",
+      "summary": "Time slot publishing, atomic reservations, and race condition prevention"
+    },
+    {
+      "id": "EP-04",
+      "name": "Lifecycle Management & Rescheduling",
+      "summary": "Appointment cancellation, atomic rescheduling, and status updates"
+    },
+    {
+      "id": "EP-05",
+      "name": "Security Audit, Hardening & DevSecOps",
+      "summary": "Audit trails, container hardening, CI/CD pipelines, and vulnerability mitigation"
+    }
+  ],
+  "sprints": [
+    {
+      "sprint_id": "Sprint 1",
+      "name": "Sprint 1: Secure Core Booking Architecture & Identity",
+      "goal": "Deliver authenticated appointment discovery, atomic booking with race condition prevention, and provider slot publishing.",
+      "total_points": 24,
+      "completed_points": 21,
+      "stories": [
+        {
+          "id": "US-01",
+          "epic": "EP-01",
+          "title": "Role-Based User Authentication",
+          "user_story": "As a user (Student/Faculty/Admin), I want to authenticate securely with email and password, so that only authorized individuals can access system features.",
+          "priority": "High",
+          "points": 5,
+          "status": "DONE",
+          "acceptance_criteria": [
+            "Given valid credentials, system issues a signed JWT token with user role claims.",
+            "Given invalid credentials, system returns a generic 401 Unauthorized without user enumeration.",
+            "Passwords must be hashed with PBKDF2/SHA-256 and unique salt.",
+            "Failed login attempts must be logged in security audit log."
+          ]
+        },
+        {
+          "id": "US-02",
+          "epic": "EP-02",
+          "title": "Browse Service Catalog",
+          "user_story": "As a student, I want to view available academic services, so that I can choose the appropriate mentoring or lab evaluation session.",
+          "priority": "Medium",
+          "points": 3,
+          "status": "DONE",
+          "acceptance_criteria": [
+            "User can view list of services with title, description, and duration in minutes.",
+            "Unauthorized users cannot modify service catalog entries.",
+            "Service selection dynamically filters open time slots."
+          ]
+        },
+        {
+          "id": "US-03",
+          "epic": "EP-03",
+          "title": "Check Real-Time Available Time Slots",
+          "user_story": "As a student, I want to check real-time available time slots for a selected service, so that I can find an open meeting time that fits my schedule.",
+          "priority": "High",
+          "points": 3,
+          "status": "DONE",
+          "acceptance_criteria": [
+            "Only available (unbooked) slots are displayed as selectable.",
+            "Booked slots must be visually distinguished and non-interactive.",
+            "Slot times must display date, start time, end time, and provider name."
+          ]
+        },
+        {
+          "id": "US-04",
+          "epic": "EP-03",
+          "title": "Atomic Appointment Booking & Race Condition Prevention",
+          "user_story": "As a student, I want the system to guarantee that my selected slot cannot be double-booked by another student, so that appointment conflicts and schedule collisions are impossible.",
+          "priority": "Critical",
+          "points": 8,
+          "status": "DONE",
+          "acceptance_criteria": [
+            "Booking operation must execute within an atomic transaction with immediate serialization locking.",
+            "Database unique constraint must enforce that no slot ID can have more than one CONFIRMED appointment.",
+            "If two students attempt to book the same slot simultaneously, exactly one succeeds (201 Created) and the other is safely rejected with 409 Conflict.",
+            "Attempted double-booking race condition must trigger an audit log event 'BOOKING_CONFLICT_PREVENTED'."
+          ]
+        },
+        {
+          "id": "US-05",
+          "epic": "EP-03",
+          "title": "Faculty Availability Slot Definition",
+          "user_story": "As a faculty member, I want to define and publish available time slots for my services, so that students can view and schedule appointments with me.",
+          "priority": "High",
+          "points": 5,
+          "status": "DONE",
+          "acceptance_criteria": [
+            "Faculty can select service, date, start time, and end time.",
+            "System validates that end time is strictly after start time.",
+            "Only faculty and admin roles can publish availability slots (RBAC enforced)."
+          ]
+        }
+      ]
+    },
+    {
+      "sprint_id": "Sprint 2",
+      "name": "Sprint 2: Lifecycle Management, Concurrency Hardening & DevSecOps",
+      "goal": "Implement appointment rescheduling, cancellation, provider roster management, security audit monitoring, and containerized deployment.",
+      "total_points": 22,
+      "completed_points": 22,
+      "stories": [
+        {
+          "id": "US-06",
+          "epic": "EP-04",
+          "title": "Personal Booking History View",
+          "user_story": "As a student, I want to view my booking history, so that I can track past and upcoming scheduled appointments.",
+          "priority": "Medium",
+          "points": 3,
+          "status": "DONE",
+          "acceptance_criteria": [
+            "Student sees only their own appointments (enforcing SR-02 / Object-Level Authorization).",
+            "History displays status: CONFIRMED, COMPLETED, CANCELLED, or RESCHEDULED.",
+            "Appointments are ordered with newest first."
+          ]
+        },
+        {
+          "id": "US-07",
+          "epic": "EP-04",
+          "title": "Appointment Cancellation with Slot Release",
+          "user_story": "As a student or faculty member, I want to cancel an existing appointment, so that the reserved time slot is freed for other students to book.",
+          "priority": "Medium",
+          "points": 3,
+          "status": "DONE",
+          "acceptance_criteria": [
+            "Student can cancel only their own appointments.",
+            "Upon cancellation, slot is atomically marked available (is_booked = 0).",
+            "Audit event APPOINTMENT_CANCELLED is recorded with timestamp."
+          ]
+        },
+        {
+          "id": "US-08",
+          "epic": "EP-04",
+          "title": "Atomic Appointment Rescheduling",
+          "user_story": "As a student, I want to reschedule an existing appointment to a new open slot, so that I can update my meeting without risking losing my reservation.",
+          "priority": "High",
+          "points": 5,
+          "status": "DONE",
+          "acceptance_criteria": [
+            "Rescheduling executes in a single atomic transaction: locks new slot, releases old slot, updates appointment.",
+            "If new slot is concurrently booked by another user, transaction rolls back and old appointment remains intact.",
+            "Audit log records old and new slot IDs."
+          ]
+        },
+        {
+          "id": "US-09",
+          "epic": "EP-04",
+          "title": "Faculty Appointment Roster & Status Updates",
+          "user_story": "As a faculty member, I want to view my scheduled appointments and update their status (Completed/Cancelled), so that I can manage my student meeting workflow.",
+          "priority": "Medium",
+          "points": 3,
+          "status": "DONE",
+          "acceptance_criteria": [
+            "Faculty can view only appointments booked for their own slots.",
+            "Faculty can update status to COMPLETED, CONFIRMED, or CANCELLED.",
+            "Unauthorized faculty cannot modify appointments belonging to other professors."
+          ]
+        },
+        {
+          "id": "US-10",
+          "epic": "EP-05",
+          "title": "Security Event Audit Logging & Metrics",
+          "user_story": "As a security administrator, I want to review an immutable audit log of security events and real-time metrics, so that I can detect brute-force attacks and race condition attempts.",
+          "priority": "High",
+          "points": 5,
+          "status": "DONE",
+          "acceptance_criteria": [
+            "Structured audit logs capture user_id, action, status, ip_address, and timestamp.",
+            "Key events tracked: LOGIN_FAILURE, BOOKING_SUCCESS, BOOKING_CONFLICT_PREVENTED, UNAUTHORIZED_ACCESS.",
+            "Admin metrics dashboard displays real-time counter of prevented race conditions."
+          ]
+        },
+        {
+          "id": "US-11",
+          "epic": "EP-05",
+          "title": "Containerized Hardened Deployment",
+          "user_story": "As a DevSecOps engineer, I want the application to be packaged in a non-root, minimal container with Kubernetes security contexts, so that deployment risks and host privilege escalations are prevented.",
+          "priority": "High",
+          "points": 3,
+          "status": "DONE",
+          "acceptance_criteria": [
+            "Dockerfile uses multi-stage build and minimal python:3.11-slim base.",
+            "Container executes as non-root user (UID 10001).",
+            "Kubernetes manifest applies runAsNonRoot: true, drops all capabilities, and enforces resource limits."
+          ]
+        },
+        {
+          "id": "US-12",
+          "epic": "EP-05",
+          "title": "Automated Concurrency Testing & CI/CD Pipeline",
+          "user_story": "As a quality assurance engineer, I want automated regression and concurrency race-condition tests integrated into CI/CD, so that builds fail immediately if double-booking regressions are introduced.",
+          "priority": "High",
+          "points": 3,
+          "status": "DONE",
+          "acceptance_criteria": [
+            "CI/CD workflow triggers on pull request and executes automated concurrency suite.",
+            "Test simulates 10 concurrent requests for the same slot ID and asserts exactly 1 succeeds.",
+            "Build is rejected if any double booking occurs."
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: booking-app-service
+  namespace: secure-booking
+  labels:
+    app: booking-system
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  selector:
+    app: booking-system

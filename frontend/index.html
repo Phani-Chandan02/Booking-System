@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secure Appointment Booking System</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <!-- Navigation Header -->
+  <header class="navbar">
+    <div class="brand-section">
+      <span class="brand-badge">SEC-APP</span>
+      <span class="brand-title">Appointment Portal</span>
+    </div>
+    <nav class="nav-links" id="main-nav" style="display: none;">
+      <button class="nav-btn active" id="nav-booking" onclick="showScreen('screen-booking')">Book Slot</button>
+      <button class="nav-btn" id="nav-history" onclick="showScreen('screen-history')">My Bookings</button>
+      <button class="nav-btn" id="nav-provider" onclick="showScreen('screen-provider')">Provider Console</button>
+      <button class="nav-btn" id="nav-audit" onclick="showScreen('screen-audit')">Security Audit</button>
+    </nav>
+    <div class="user-meta" id="user-profile" style="display: none;">
+      <span class="role-tag" id="user-role-badge">STUDENT</span>
+      <span id="user-name-display" style="font-size: 0.85rem; font-weight: 500;">User</span>
+      <button class="btn btn-outline" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;" onclick="logout()">Sign Out</button>
+    </div>
+  </header>
+
+  <!-- Global Alert Banner -->
+  <div class="main-wrapper" style="padding-bottom: 0;">
+    <div id="global-alert" style="display: none;" class="security-alert">
+      <span id="global-alert-text"></span>
+      <button onclick="dismissAlert()" style="background:none; border:none; color:inherit; cursor:pointer;">✕</button>
+    </div>
+  </div>
+
+  <main class="main-wrapper">
+    <!-- SCREEN 1: LOGIN / AUTHENTICATION -->
+    <section id="screen-auth" class="screen active">
+      <div style="max-width: 440px; margin: 3rem auto;">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Identity Verification</h2>
+              <p class="card-subtitle">Authenticate via role-based credentials</p>
+            </div>
+            <span class="badge badge-info">SR-01</span>
+          </div>
+          <form id="login-form" onsubmit="handleLogin(event)">
+            <div class="form-group">
+              <label class="form-label" for="login-email">Email Address</label>
+              <input type="email" id="login-email" class="form-input" required placeholder="user@booking.com" value="student@booking.com">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="login-password">Password</label>
+              <input type="password" id="login-password" class="form-input" required placeholder="••••••••" value="Student@123">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In</button>
+          </form>
+
+          <div class="demo-creds">
+            <span style="font-weight: 600; color: var(--text-secondary);">One-Click Role Selection for Examiners:</span>
+            <div class="demo-btn-row">
+              <button class="demo-btn" onclick="fillCreds('student@booking.com', 'Student@123')">Student</button>
+              <button class="demo-btn" onclick="fillCreds('faculty@booking.com', 'Faculty@123')">Faculty</button>
+              <button class="demo-btn" onclick="fillCreds('admin@booking.com', 'Admin@123')">Admin</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 2: AVAILABLE SERVICES & REAL-TIME SLOT BOOKING -->
+    <section id="screen-booking" class="screen">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Step 1: Select Service</h2>
+            <p class="card-subtitle">Choose an academic service offering</p>
+          </div>
+          <span class="badge badge-info">FR-01</span>
+        </div>
+        <div class="service-grid" id="service-list">
+          <!-- Dynamic Services -->
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Step 2: Check & Reserve Available Time Slot</h2>
+            <p class="card-subtitle">Slots are guarded against concurrent double-booking (SR-04)</p>
+          </div>
+          <span class="badge badge-success">Atomic Concurrency Lock Active</span>
+        </div>
+        
+        <!-- Live Concurrency Simulation Box -->
+        <div style="background-color: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <span style="font-size: 0.85rem; font-weight: 600;">Race Condition Security Demonstration</span>
+            <span class="badge badge-warning">CWE-362 TOCTOU Test</span>
+          </div>
+          <p style="font-size: 0.775rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+            Test concurrency defense: simulate two simultaneous requests for the selected slot. 
+            The vulnerable endpoint allows double booking; the secure endpoint enforces atomic isolation.
+          </p>
+          <div style="display: flex; gap: 0.75rem;">
+            <button class="btn btn-secondary" style="font-size: 0.8rem;" onclick="runLiveConcurrencyTest(false)">Simulate Normal Double-Booking Attack</button>
+            <button class="btn btn-danger" style="font-size: 0.8rem;" onclick="runLiveConcurrencyTest(true)">Demonstrate Vulnerable Path (TOCTOU Failure)</button>
+          </div>
+        </div>
+
+        <div id="slots-container">
+          <p style="font-size: 0.85rem; color: var(--text-secondary);">Select a service above to view available time slots.</p>
+        </div>
+
+        <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem;">
+          <button id="btn-book-slot" class="btn btn-primary" onclick="bookSelectedSlot()" disabled>Confirm Booking</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 3: MY APPOINTMENTS / HISTORY & RESCHEDULE -->
+    <section id="screen-history" class="screen">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Booking History & Active Appointments</h2>
+            <p class="card-subtitle">View, cancel, or reschedule your reservations</p>
+          </div>
+          <span class="badge badge-info">FR-04 / FR-05 / SR-02</span>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Booking ID</th>
+                <th>Service</th>
+                <th>Provider</th>
+                <th>Date & Time</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="my-appointments-table">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 4: PROVIDER DASHBOARD (FACULTY / ADMIN) -->
+    <section id="screen-provider" class="screen">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Service Provider Roster</h2>
+            <p class="card-subtitle">Review scheduled appointments and update fulfillment status</p>
+          </div>
+          <span class="badge badge-info">FR-08 / FR-09</span>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Student</th>
+                <th>Service</th>
+                <th>Scheduled Time</th>
+                <th>Status</th>
+                <th>Update Status</th>
+              </tr>
+            </thead>
+            <tbody id="provider-roster-table">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Define New Availability Slot</h2>
+            <p class="card-subtitle">Publish time slots for students to reserve</p>
+          </div>
+          <span class="badge badge-info">FR-07</span>
+        </div>
+        <form onsubmit="handleCreateSlot(event)" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: end;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">Service</label>
+            <select id="new-slot-service" class="form-select" required></select>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">Date</label>
+            <input type="date" id="new-slot-date" class="form-input" required value="2026-10-18">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">Start Time</label>
+            <input type="time" id="new-slot-start" class="form-input" required value="13:00">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">End Time</label>
+            <input type="time" id="new-slot-end" class="form-input" required value="13:30">
+          </div>
+          <button type="submit" class="btn btn-primary">Publish Slot</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- SCREEN 5: AUDIT LOGS & MONITORING METRICS (PHASE 15) -->
+    <section id="screen-audit" class="screen">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+        <div class="card" style="padding: 1rem; text-align: center;">
+          <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Prevented Conflicts</span>
+          <h3 id="metric-conflicts" style="font-size: 1.75rem; color: var(--accent-success); margin-top: 0.25rem;">0</h3>
+        </div>
+        <div class="card" style="padding: 1rem; text-align: center;">
+          <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Failed Logins</span>
+          <h3 id="metric-failed-logins" style="font-size: 1.75rem; color: var(--accent-danger); margin-top: 0.25rem;">0</h3>
+        </div>
+        <div class="card" style="padding: 1rem; text-align: center;">
+          <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Confirmed Bookings</span>
+          <h3 id="metric-confirmed" style="font-size: 1.75rem; color: #60a5fa; margin-top: 0.25rem;">0</h3>
+        </div>
+        <div class="card" style="padding: 1rem; text-align: center;">
+          <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Available Slots</span>
+          <h3 id="metric-slots" style="font-size: 1.75rem; color: var(--text-primary); margin-top: 0.25rem;">0</h3>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Security Audit Log Feed</h2>
+            <p class="card-subtitle">Immutable chronological trail of security-relevant events (SR-08)</p>
+          </div>
+          <button class="btn btn-outline" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;" onclick="loadAuditData()">Refresh Logs</button>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>User</th>
+                <th>Action</th>
+                <th>Status</th>
+                <th>IP Address</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody id="audit-logs-table">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Reschedule Modal Dialog -->
+  <div class="modal-backdrop" id="reschedule-modal">
+    <div class="modal-content">
+      <div class="card-header" style="margin-bottom: 1rem;">
+        <h3 class="card-title">Reschedule Appointment</h3>
+        <button onclick="closeRescheduleModal()" style="background:none; border:none; color:inherit; font-size:1.2rem; cursor:pointer;">✕</button>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+        Select an open slot to transfer your reservation. The previous slot will be atomically released upon confirmation.
+      </p>
+      <div class="form-group">
+        <label class="form-label">Available Slots</label>
+        <select id="reschedule-slot-select" class="form-select"></select>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+        <button class="btn btn-secondary" onclick="closeRescheduleModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmReschedule()">Confirm Reschedule</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
